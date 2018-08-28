@@ -53,10 +53,42 @@ let socket = new Socket("/socket", {params: {token: window.userToken}})
 
 socket.connect()
 
+function sanitize(html) {
+  return $("<div/>").text(html).html();
+}
+
+function messageTemplate(msg) {
+  let username = sanitize(msg.user || "anonymous");
+  let body = sanitize(msg.body);
+
+  return "<p><a href='#'>[" + username + "]</a>&nbsp; " + body + "</p>";
+}
+
+var $status = $("#status");
+var $messages = $("#messages");
+var $input = $("#message-input");
+var $username = $("#username");
+
 // Now that you are connected, you can join channels with a topic:
-let channel = socket.channel("topic:subtopic", {})
+let channel = socket.channel("room:lobby", {});
 channel.join()
   .receive("ok", resp => { console.log("Joined successfully", resp) })
   .receive("error", resp => { console.log("Unable to join", resp) })
 
+channel.on("user:entered", function(msg) {
+  let username = sanitize(msg.user || "anonymous");
+  $messages.append("<br/><i>[" + username + " entered]</i>");
+});
+
+channel.on("new:msg", function(msg) {
+  $messages.append(messageTemplate(msg));
+  scrollTo(0, document.body.scrollHeight);
+});
+
+$input.off("keypress").on("keypress", function(e) {
+  if (e.keyCode == 13) {
+    channel.push("new:msg", { user: $username.val(), body: $input.val()});
+    $input.val("");
+  }
+});
 export default socket
