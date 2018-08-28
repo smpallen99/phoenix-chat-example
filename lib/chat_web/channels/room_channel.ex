@@ -3,7 +3,7 @@ defmodule ChatWeb.RoomChannel do
 
   require Logger
 
-  def join("room:lobby", payload, socket) do
+  def join("rooms:lobby", payload, socket) do
     if authorized?(payload) do
       Process.flag(:trap_exit, true)
       :timer.send_interval(15000, :ping)
